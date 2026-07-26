@@ -53,4 +53,4 @@ It remains available as an open-source reference that documents the early develo
 
 ## License
 
-This project is licensed under the MIT License.
+This project is licensed under the [MIT License](LICENSE).
