@@ -21,8 +21,8 @@ Although originally designed specifically for KelimeGo, the ideas and architectu
 > *A quick overview of the KelimeGo CMS Prototype interface.*
 
 <p align="center">
-  <img src="assets/images/1.png" alt="Dashboard" width="48%">
-  <img src="assets/images/2.png" alt="Question Pool" width="48%">
+  <img src="assets/dashboard.png" alt="Dashboard" width="48%">
+  <img src="assets/questionpool.png" alt="Question Pool" width="48%">
 </p>
 
 <p align="center">
