@@ -16,6 +16,23 @@ Although originally designed specifically for KelimeGo, the ideas and architectu
 
 ---
 
+## Screenshots
+
+> *A quick overview of the KelimeGo CMS Prototype interface.*
+
+<p align="center">
+  <img src="assets/images/1.png" alt="Dashboard" width="48%">
+  <img src="assets/images/2.png" alt="Question Pool" width="48%">
+</p>
+
+<p align="center">
+  <sub><b>Dashboard</b></sub>
+  &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+  <sub><b>Question Pool</b></sub>
+</p>
+
+---
+
 ## Features
 
 - Firebase Realtime Database integration
