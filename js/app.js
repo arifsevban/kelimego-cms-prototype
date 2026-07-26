@@ -1,3 +1,168 @@
+
+function generateQuestionCardHTML(q) {
+    const answersEntries = Object.entries(q.acceptable_answers || {});
+    
+    let answersHTML = '';
+    if (answersEntries.length > 0) {
+        answersHTML = answersEntries.map(([key, list]) => {
+            const hasAlts = list && list.length > 1;
+            const altsHTML = hasAlts
+                ? list.slice(1).map(alt => `<span class="px-1.5 py-0.5 bg-black border border-neutral-850 rounded text-neutral-300 font-mono">${escapeHtml(alt)}</span>`).join('')
+                : `<span class="text-neutral-500 italic">Alternatif tanımlanmamış</span>`;
+                
+            return `<div class="relative inline-block">
+                <button type="button" class="answer-badge px-2.5 py-1 bg-neutral-950 hover:bg-neutral-900 border border-neutral-855 hover:border-neutral-700 rounded-lg text-xs text-neutral-200 font-semibold cursor-pointer transition flex items-center gap-1.5 select-none font-sans">
+                    <span>${escapeHtml(key)}</span>
+                    ${hasAlts ? `<i data-lucide="git-branch" class="w-3 h-3 text-emerald-500"></i>` : ''}
+                </button>
+                <div class="alt-popover hidden absolute left-0 top-full mt-1.5 z-20 w-52 bg-neutral-900 border border-neutral-800 rounded-xl p-2.5 shadow-2xl text-[11px] text-neutral-300 transform origin-top scale-95 opacity-0 transition-all duration-150 pointer-events-auto font-sans">
+                    <div class="absolute -top-1 left-4 w-2 h-2 bg-neutral-900 border-t border-l border-neutral-800 rotate-45"></div>
+                    <div class="font-bold text-[9px] uppercase tracking-wider text-neutral-500 mb-1 flex items-center gap-1">
+                        <i data-lucide="git-branch" class="w-3 h-3 text-emerald-400"></i>
+                        <span>Alternatif Cevaplar</span>
+                    </div>
+                    <div class="flex flex-wrap gap-1 mt-1.5">
+                        ${altsHTML}
+                    </div>
+                </div>
+            </div>`;
+        }).join('');
+    }
+
+    return `<div class="question-card bg-black border border-neutral-800 rounded-2xl p-4 flex flex-col justify-between gap-3 transition hover:border-emerald-900/60 hover:shadow-[0_0_15px_rgba(16,185,129,0.02)]" data-cat="${escapeHtml(q.category)}" data-id="${escapeHtml(q.id)}">
+        <div class="space-y-2">
+            <div class="flex flex-wrap items-center gap-2">
+                <span class="px-2 py-0.5 bg-emerald-950/20 text-emerald-400 border border-emerald-900/30 rounded-md text-[10px] font-bold uppercase tracking-wider">
+                    ${escapeHtml(q.categoryLabel)}
+                </span>
+                <span class="text-[10px] font-mono text-neutral-500 font-medium">
+                    ${escapeHtml(q.id)}
+                </span>
+            </div>
+            <p class="text-sm font-semibold text-neutral-100 leading-snug">${escapeHtml(q.question)}</p>
+
+            <div class="answers-wrapper hidden pt-2 border-t border-neutral-900/40 mt-1.5 space-y-1.5">
+                <span class="text-[10px] text-neutral-500 uppercase tracking-wider block mb-1 font-bold">Kabul Edilen Cevaplar (Alternatifler için tıklayın):</span>
+                <div class="flex flex-wrap gap-2">
+                    ${answersHTML}
+                </div>
+            </div>
+        </div>
+
+        <div class="flex flex-wrap items-center justify-between gap-x-2 gap-y-2 border-t border-neutral-900/60 pt-3 mt-1">
+            <button type="button" class="toggle-answers-btn shrink-0 px-1 py-1.5 min-[340px]:px-1.5 sm:px-2.5 sm:py-1.5 bg-neutral-950 hover:bg-neutral-900 border border-neutral-855 hover:border-neutral-800 text-neutral-400 hover:text-neutral-200 rounded-lg text-[9px] min-[340px]:text-[10px] sm:text-xs font-semibold transition cursor-pointer flex items-center gap-0.5 min-[340px]:gap-1 sm:gap-1.5 whitespace-nowrap">
+                <i data-lucide="eye" class="w-3 h-3 sm:w-3.5 sm:h-3.5 eye-icon shrink-0"></i>
+                <span class="btn-text whitespace-nowrap">Cevapları Gör</span>
+            </button>
+
+            <div class="flex items-center gap-1 sm:gap-2 shrink-0">
+                <button type="button" class="change-cat-btn px-2 py-1.5 sm:px-2.5 sm:py-1.5 bg-neutral-950 hover:bg-emerald-950/20 border border-neutral-855 hover:border-emerald-900/30 text-neutral-400 hover:text-emerald-400 rounded-lg text-[10px] sm:text-xs font-semibold transition cursor-pointer flex items-center justify-center shrink-0" title="Kategori Değiştir">
+                    <i data-lucide="folder-sync" class="w-3 h-3"></i>
+                </button>
+                <button type="button" class="edit-q-btn px-2 py-1.5 sm:px-3 sm:py-1.5 bg-white hover:bg-emerald-50 hover:text-emerald-950 text-black rounded-lg text-[10px] sm:text-xs font-bold transition cursor-pointer flex items-center gap-1 sm:gap-1.5 shrink-0">
+                    <i data-lucide="pencil" class="w-3 h-3"></i>
+                    <span class="hidden sm:inline">Düzenle</span>
+                </button>
+                <button type="button" class="delete-q-btn px-2 py-1.5 sm:px-3 sm:py-1.5 bg-neutral-950 hover:bg-red-950/20 hover:text-red-400 hover:border-red-900/40 border border-neutral-855 text-neutral-500 rounded-lg text-[10px] sm:text-xs font-semibold transition cursor-pointer flex items-center gap-1 sm:gap-1.5 shrink-0">
+                    <i data-lucide="trash-2" class="w-3 h-3"></i>
+                    <span class="hidden sm:inline">Sil</span>
+                </button>
+            </div>
+        </div>
+    </div>`;
+}
+
+function setupListEventDelegation() {
+    const handleListClick = (e, isViewAllModal = false) => {
+        const target = e.target;
+
+        const toggleBtn = target.closest('.toggle-answers-btn');
+        if (toggleBtn) {
+            const card = toggleBtn.closest('.question-card');
+            const answersWrapper = card.querySelector('.answers-wrapper');
+            const isHidden = answersWrapper.classList.toggle('hidden');
+            toggleBtn.innerHTML = isHidden
+                ? '<i data-lucide="eye" class="w-3 h-3 sm:w-3.5 sm:h-3.5 eye-icon shrink-0"></i><span class="btn-text whitespace-nowrap">Cevapları Gör</span>'
+                : '<i data-lucide="eye-off" class="w-3 h-3 sm:w-3.5 sm:h-3.5 eye-icon shrink-0"></i><span class="btn-text whitespace-nowrap">Cevapları Gizle</span>';
+            lucide.createIcons();
+            return;
+        }
+
+        const badgeBtn = target.closest('.answer-badge');
+        if (badgeBtn) {
+            e.stopPropagation();
+            const parentContainer = badgeBtn.closest('.relative');
+            const popover = parentContainer.querySelector('.alt-popover');
+
+            document.querySelectorAll('.alt-popover').forEach(p => {
+                if (p !== popover) {
+                    p.classList.add('hidden', 'scale-95', 'opacity-0');
+                    p.classList.remove('scale-100', 'opacity-100');
+                }
+            });
+
+            const isHidden = popover.classList.contains('hidden');
+            if (isHidden) {
+                popover.classList.remove('hidden');
+                setTimeout(() => {
+                    popover.classList.remove('scale-95', 'opacity-0');
+                    popover.classList.add('scale-100', 'opacity-100');
+                }, 10);
+            } else {
+                popover.classList.remove('scale-100', 'opacity-100');
+                popover.classList.add('scale-95', 'opacity-0');
+                setTimeout(() => {
+                    popover.classList.add('hidden');
+                }, 150);
+            }
+            return;
+        }
+
+        const editBtn = target.closest('.edit-q-btn');
+        if (editBtn) {
+            const card = editBtn.closest('.question-card');
+            if (isViewAllModal) closeViewAllModal(true);
+            const q = questionsIndex.find(item => item.category === card.dataset.cat && item.id === card.dataset.id);
+            if (q) startEditQuestion(q);
+            return;
+        }
+
+        const deleteBtn = target.closest('.delete-q-btn');
+        if (deleteBtn) {
+            const card = deleteBtn.closest('.question-card');
+            deleteQuestion(card.dataset.cat, card.dataset.id);
+            return;
+        }
+
+        const changeCatBtn = target.closest('.change-cat-btn');
+        if (changeCatBtn) {
+            const card = changeCatBtn.closest('.question-card');
+            const q = questionsIndex.find(item => item.category === card.dataset.cat && item.id === card.dataset.id);
+            if (q) changeCategoryOfQuestion(q);
+            return;
+        }
+    };
+
+    if (questionsListContainer && !questionsListContainer.dataset.delegated) {
+        questionsListContainer.dataset.delegated = "true";
+        questionsListContainer.addEventListener('click', (e) => handleListClick(e, false));
+    }
+
+    if (viewAllListContainer && !viewAllListContainer.dataset.delegated) {
+        viewAllListContainer.dataset.delegated = "true";
+        viewAllListContainer.addEventListener('click', (e) => handleListClick(e, true));
+    }
+}
+
+
+function debounce(func, wait = 60) {
+    let timeout;
+    return function (...args) {
+        clearTimeout(timeout);
+        timeout = setTimeout(() => func.apply(this, args), wait);
+    };
+}
+
 import { initializeApp, deleteApp, getApp } from 'https://www.gstatic.com/firebasejs/12.15.0/firebase-app.js';
 import { getDatabase, ref, set, onValue, remove, get } from 'https://www.gstatic.com/firebasejs/12.15.0/firebase-database.js';
 
@@ -116,6 +281,8 @@ let isFirebaseConnected = false;
 let questionsData = {}; // Stores all questions from DB
 let questionsListener = null;
 
+
+
 let isEditMode = false;
 let editQuestionId = null;
 let editOriginalCategory = null;
@@ -180,6 +347,58 @@ function loadCategories() {
     const saved = localStorage.getItem('cms_categories');
     return saved ? JSON.parse(saved) : DEFAULT_CATEGORIES;
 }
+
+let questionsIndex = [];
+
+function rebuildQuestionsIndex() {
+    const list = [];
+    const categoryNamesMap = {};
+    const cats = typeof loadCategories === 'function' ? loadCategories() : [];
+    if (Array.isArray(cats)) {
+        cats.forEach(c => { if (c && c.value) categoryNamesMap[c.value] = c.label; });
+    }
+
+    if (!questionsData || typeof questionsData !== 'object') {
+        questionsIndex = [];
+        return;
+    }
+
+    for (const categoryId in questionsData) {
+        const categoryObj = questionsData[categoryId];
+        if (!categoryObj || typeof categoryObj !== 'object') continue;
+
+        for (const questionId in categoryObj) {
+            const qData = categoryObj[questionId];
+            if (!qData) continue;
+
+            const acceptableAnswersMap = migrateQuestionToMap(qData);
+
+            const answerTerms = [];
+            for (const [key, altList] of Object.entries(acceptableAnswersMap)) {
+                answerTerms.push(toTurkishLowerCase(key));
+                if (altList && Array.isArray(altList)) {
+                    for (const alt of altList) {
+                        answerTerms.push(toTurkishLowerCase(alt));
+                    }
+                }
+            }
+
+            list.push({
+                id: questionId,
+                category: categoryId,
+                categoryLabel: categoryNamesMap[categoryId] || categoryId,
+                question: qData.question || '',
+                acceptable_answers: acceptableAnswersMap,
+                normQuestion: toTurkishLowerCase(qData.question || ''),
+                normAnswers: answerTerms.join(' '),
+                normId: toTurkishLowerCase(questionId)
+            });
+        }
+    }
+    list.sort((a, b) => b.id.localeCompare(a.id));
+    questionsIndex = list;
+}
+
 
 function saveCategories(cats) {
     categoriesCache = cats;
@@ -578,59 +797,25 @@ function closeViewAllModal(immediate = false) {
 }
 
 function renderViewAllQuestionList() {
-    const questionSearchQuery = viewAllSearchQuestionInput ? viewAllSearchQuestionInput.value.toLowerCase().trim() : '';
-    const answerSearchQuery = viewAllSearchAnswerInput ? viewAllSearchAnswerInput.value.toLowerCase().trim() : '';
+    setupListEventDelegation();
+    const questionSearchQuery = viewAllSearchQuestionInput ? toTurkishLowerCase(viewAllSearchQuestionInput.value) : '';
+    const answerSearchQuery = viewAllSearchAnswerInput ? toTurkishLowerCase(viewAllSearchAnswerInput.value) : '';
     const categoryFilter = viewAllFilterCategory ? viewAllFilterCategory.value : 'all';
 
-    const questionsArray = [];
-
-    for (const categoryId in questionsData) {
-        if (categoryFilter !== 'all' && categoryId !== categoryFilter) {
-            continue;
-        }
-        const categoryObj = questionsData[categoryId];
-        for (const questionId in categoryObj) {
-            const qData = categoryObj[questionId];
-
-            const acceptableAnswersMap = migrateQuestionToMap(qData);
-
-            if (questionSearchQuery) {
-                const questionText = (qData.question || '').toLowerCase();
-                if (!questionText.includes(questionSearchQuery)) {
-                    continue;
-                }
-            }
-
-            if (answerSearchQuery) {
-                const searchParts = [];
-                Object.entries(acceptableAnswersMap).forEach(([key, list]) => {
-                    searchParts.push(key);
-                    list.forEach(item => searchParts.push(item));
-                });
-                const answersText = searchParts.join(' ').toLowerCase();
-                if (!answersText.includes(answerSearchQuery)) {
-                    continue;
-                }
-            }
-
-            questionsArray.push({
-                id: questionId,
-                category: categoryId,
-                question: qData.question,
-                acceptable_answers: acceptableAnswersMap
-            });
-        }
-    }
-
-    questionsArray.sort((a, b) => b.id.localeCompare(a.id));
+    const filtered = questionsIndex.filter(item => {
+        if (categoryFilter !== 'all' && item.category !== categoryFilter) return false;
+        if (questionSearchQuery && !item.normQuestion.includes(questionSearchQuery)) return false;
+        if (answerSearchQuery && !item.normAnswers.includes(answerSearchQuery)) return false;
+        return true;
+    });
 
     if (viewAllCountSpan) {
-        viewAllCountSpan.textContent = `${questionsArray.length} soru`;
+        viewAllCountSpan.textContent = `${filtered.length} soru`;
     }
 
     if (!viewAllListContainer) return;
 
-    if (questionsArray.length === 0) {
+    if (filtered.length === 0) {
         viewAllListContainer.innerHTML = `
             <div class="col-span-full text-center py-20 text-neutral-500 text-sm">
                 <i data-lucide="clipboard-list" class="w-8 h-8 mx-auto mb-2 opacity-50"></i>
@@ -641,136 +826,7 @@ function renderViewAllQuestionList() {
         return;
     }
 
-    viewAllListContainer.innerHTML = '';
-    questionsArray.forEach(q => {
-        const card = document.createElement('div');
-        card.className = "bg-black border border-neutral-800 rounded-2xl p-4 flex flex-col justify-between gap-3 transition hover:border-emerald-900/60 hover:shadow-[0_0_15px_rgba(16,185,129,0.02)]";
-
-        const categoryNames = {};
-        loadCategories().forEach(c => { categoryNames[c.value] = c.label; });
-        const catName = categoryNames[q.category] || q.category;
-
-        card.innerHTML = `
-            <div class="space-y-2">
-                <div class="flex flex-wrap items-center gap-2">
-                    <span class="px-2 py-0.5 bg-emerald-950/20 text-emerald-400 border border-emerald-900/30 rounded-md text-[10px] font-bold uppercase tracking-wider">
-                        ${catName}
-                    </span>
-                    <span class="text-[10px] font-mono text-neutral-500 font-medium">
-                        ${q.id}
-                    </span>
-                </div>
-                <p class="text-sm font-semibold text-neutral-100 leading-snug">${escapeHtml(q.question)}</p>
-
-                <div class="answers-wrapper hidden pt-2 border-t border-neutral-900/40 mt-1.5 space-y-1.5">
-                    <span class="text-[10px] text-neutral-500 uppercase tracking-wider block mb-1 font-bold">Kabul Edilen Cevaplar (Alternatifler için tıklayın):</span>
-                    <div class="flex flex-wrap gap-2">
-                        ${Object.entries(q.acceptable_answers || {}).map(([key, list]) => `
-                            <div class="relative inline-block">
-                                <button type="button" class="answer-badge px-2.5 py-1 bg-neutral-950 hover:bg-neutral-900 border border-neutral-855 hover:border-neutral-700 rounded-lg text-xs text-neutral-200 font-semibold cursor-pointer transition flex items-center gap-1.5 select-none font-sans">
-                                    <span>${escapeHtml(key)}</span>
-                                    ${list && list.length > 1 ? `<i data-lucide="git-branch" class="w-3 h-3 text-emerald-500"></i>` : ''}
-                                </button>
-                                <div class="alt-popover hidden absolute left-0 top-full mt-1.5 z-20 w-52 bg-neutral-900 border border-neutral-800 rounded-xl p-2.5 shadow-2xl text-[11px] text-neutral-300 transform origin-top scale-95 opacity-0 transition-all duration-150 pointer-events-auto font-sans">
-                                    <div class="absolute -top-1 left-4 w-2 h-2 bg-neutral-900 border-t border-l border-neutral-800 rotate-45"></div>
-                                    <div class="font-bold text-[9px] uppercase tracking-wider text-neutral-500 mb-1 flex items-center gap-1">
-                                        <i data-lucide="git-branch" class="w-3 h-3 text-emerald-400"></i>
-                                        <span>Alternatif Cevaplar</span>
-                                    </div>
-                                    <div class="flex flex-wrap gap-1 mt-1.5">
-                                        ${list && list.length > 1 ?
-                list.slice(1).map(alt => `<span class="px-1.5 py-0.5 bg-black border border-neutral-850 rounded text-neutral-300 font-mono">${escapeHtml(alt)}</span>`).join('')
-                : `<span class="text-neutral-500 italic">Alternatif tanımlanmamış</span>`
-            }
-                                    </div>
-                                </div>
-                            </div>
-                        `).join('')}
-                    </div>
-                </div>
-            </div>
-
-            <div class="flex flex-wrap items-center justify-between gap-x-2 gap-y-2 border-t border-neutral-900/60 pt-3 mt-1">
-                <button type="button" class="toggle-answers-btn shrink-0 px-1 py-1.5 min-[340px]:px-1.5 sm:px-2.5 sm:py-1.5 bg-neutral-950 hover:bg-neutral-900 border border-neutral-855 hover:border-neutral-800 text-neutral-400 hover:text-neutral-200 rounded-lg text-[9px] min-[340px]:text-[10px] sm:text-xs font-semibold transition cursor-pointer flex items-center gap-0.5 min-[340px]:gap-1 sm:gap-1.5 whitespace-nowrap">
-                    <i data-lucide="eye" class="w-3 h-3 sm:w-3.5 sm:h-3.5 eye-icon shrink-0"></i>
-                    <span class="btn-text whitespace-nowrap">Cevapları Gör</span>
-                </button>
-
-                <div class="flex items-center gap-1 sm:gap-2 shrink-0">
-                    <button type="button" class="change-cat-btn px-2 py-1.5 sm:px-2.5 sm:py-1.5 bg-neutral-950 hover:bg-emerald-950/20 border border-neutral-855 hover:border-emerald-900/30 text-neutral-400 hover:text-emerald-400 rounded-lg text-[10px] sm:text-xs font-semibold transition cursor-pointer flex items-center justify-center shrink-0" title="Kategori Değiştir">
-                        <i data-lucide="folder-sync" class="w-3 h-3"></i>
-                    </button>
-                    <button type="button" class="edit-q-btn px-2 py-1.5 sm:px-3 sm:py-1.5 bg-white hover:bg-emerald-50 hover:text-emerald-950 text-black rounded-lg text-[10px] sm:text-xs font-bold transition cursor-pointer flex items-center gap-1 sm:gap-1.5 shrink-0">
-                        <i data-lucide="pencil" class="w-3 h-3"></i>
-                        <span class="hidden sm:inline">Düzenle</span>
-                    </button>
-                    <button type="button" class="delete-q-btn px-2 py-1.5 sm:px-3 sm:py-1.5 bg-neutral-950 hover:bg-red-950/20 hover:text-red-400 hover:border-red-900/40 border border-neutral-855 text-neutral-500 rounded-lg text-[10px] sm:text-xs font-semibold transition cursor-pointer flex items-center gap-1 sm:gap-1.5 shrink-0">
-                        <i data-lucide="trash-2" class="w-3 h-3"></i>
-                        <span class="hidden sm:inline">Sil</span>
-                    </button>
-                </div>
-            </div>
-        `;
-
-        const toggleAnswersBtn = card.querySelector('.toggle-answers-btn');
-        const answersWrapper = card.querySelector('.answers-wrapper');
-        const eyeIcon = toggleAnswersBtn.querySelector('.eye-icon');
-        const btnText = toggleAnswersBtn.querySelector('.btn-text');
-
-        toggleAnswersBtn.onclick = () => {
-            const isHidden = answersWrapper.classList.toggle('hidden');
-            toggleAnswersBtn.innerHTML = isHidden
-                ? '<i data-lucide="eye" class="w-3 h-3 sm:w-3.5 sm:h-3.5 eye-icon shrink-0"></i><span class="btn-text whitespace-nowrap">Cevapları Gör</span>'
-                : '<i data-lucide="eye-off" class="w-3 h-3 sm:w-3.5 sm:h-3.5 eye-icon shrink-0"></i><span class="btn-text whitespace-nowrap">Cevapları Gizle</span>';
-            lucide.createIcons();
-        };
-
-        const popovers = card.querySelectorAll('.alt-popover');
-        const badgeBtns = card.querySelectorAll('.answer-badge');
-
-        badgeBtns.forEach((btn, idx) => {
-            const popover = popovers[idx];
-            btn.onclick = (e) => {
-                e.stopPropagation();
-
-                document.querySelectorAll('.alt-popover').forEach(p => {
-                    if (p !== popover) {
-                        p.classList.add('hidden', 'scale-95', 'opacity-0');
-                        p.classList.remove('scale-100', 'opacity-100');
-                    }
-                });
-
-                const isHidden = popover.classList.contains('hidden');
-                if (isHidden) {
-                    popover.classList.remove('hidden');
-                    setTimeout(() => {
-                        popover.classList.remove('scale-95', 'opacity-0');
-                        popover.classList.add('scale-100', 'opacity-100');
-                    }, 10);
-                } else {
-                    popover.classList.remove('scale-100', 'opacity-100');
-                    popover.classList.add('scale-95', 'opacity-0');
-                    setTimeout(() => {
-                        popover.classList.add('hidden');
-                    }, 150);
-                }
-            };
-        });
-
-        card.querySelector('.edit-q-btn').onclick = () => {
-            closeViewAllModal(true);
-            startEditQuestion(q);
-        };
-        card.querySelector('.delete-q-btn').onclick = () => {
-            deleteQuestion(q.category, q.id);
-        };
-        card.querySelector('.change-cat-btn').onclick = () => {
-            changeCategoryOfQuestion(q);
-        };
-
-        viewAllListContainer.appendChild(card);
-    });
-
+    viewAllListContainer.innerHTML = filtered.map(generateQuestionCardHTML).join('');
     lucide.createIcons();
 }
 
@@ -921,8 +977,10 @@ function listenToQuestions() {
         questionsListener = onValue(dbRef, (snapshot) => {
             if (snapshot.exists()) {
                 questionsData = snapshot.val();
+                rebuildQuestionsIndex();
             } else {
                 questionsData = {};
+                rebuildQuestionsIndex();
             }
             renderQuestionList();
         }, (error) => {
@@ -968,56 +1026,28 @@ function listenToCategories() {
 }
 
 function renderQuestionList() {
-    const searchQuery = searchInput ? searchInput.value.toLowerCase().trim() : '';
+    if (questionsIndex.length === 0 && questionsData && Object.keys(questionsData).length > 0) {
+        rebuildQuestionsIndex();
+    }
+    setupListEventDelegation();
+    const searchQuery = searchInput ? toTurkishLowerCase(searchInput.value) : '';
     const categoryFilter = filterCategory ? filterCategory.value : 'all';
 
-    const questionsArray = [];
-
-    for (const categoryId in questionsData) {
-        if (categoryFilter !== 'all' && categoryId !== categoryFilter) {
-            continue;
-        }
-        const categoryObj = questionsData[categoryId];
-        for (const questionId in categoryObj) {
-            const qData = categoryObj[questionId];
-
-            const acceptableAnswersMap = migrateQuestionToMap(qData);
-
-            const questionText = (qData.question || '').toLowerCase();
-            const searchParts = [];
-            Object.entries(acceptableAnswersMap).forEach(([key, list]) => {
-                searchParts.push(key);
-                list.forEach(item => searchParts.push(item));
-            });
-            const answersText = searchParts.join(' ').toLowerCase();
-
-            if (searchQuery) {
-                const matchesText = questionText.includes(searchQuery);
-                const matchesAnswers = answersText.includes(searchQuery);
-                const matchesId = questionId.toLowerCase().includes(searchQuery);
-                if (!matchesText && !matchesAnswers && !matchesId) {
-                    continue;
-                }
-            }
-
-            questionsArray.push({
-                id: questionId,
-                category: categoryId,
-                question: qData.question,
-                acceptable_answers: acceptableAnswersMap
-            });
-        }
-    }
-
-    questionsArray.sort((a, b) => b.id.localeCompare(a.id));
+    const filtered = questionsIndex.filter(item => {
+        if (categoryFilter !== 'all' && item.category !== categoryFilter) return false;
+        if (!searchQuery) return true;
+        return item.normQuestion.includes(searchQuery) ||
+               item.normAnswers.includes(searchQuery) ||
+               item.normId.includes(searchQuery);
+    });
 
     if (listCountSpan) {
-        listCountSpan.textContent = `${questionsArray.length} soru`;
+        listCountSpan.textContent = `${filtered.length} soru`;
     }
 
     if (!questionsListContainer) return;
 
-    if (questionsArray.length === 0) {
+    if (filtered.length === 0) {
         questionsListContainer.innerHTML = `
             <div class="text-center py-20 text-neutral-500 text-sm">
                 <i data-lucide="clipboard-list" class="w-8 h-8 mx-auto mb-2 opacity-50"></i>
@@ -1028,140 +1058,12 @@ function renderQuestionList() {
         return;
     }
 
-    questionsListContainer.innerHTML = '';
-    questionsArray.forEach(q => {
-        const card = document.createElement('div');
-        card.className = "bg-black border border-neutral-800 rounded-2xl p-4 flex flex-col justify-between gap-3 transition hover:border-emerald-900/60 hover:shadow-[0_0_15px_rgba(16,185,129,0.02)]";
-
-        const categoryNames = {};
-        loadCategories().forEach(c => { categoryNames[c.value] = c.label; });
-        const catName = categoryNames[q.category] || q.category;
-
-        card.innerHTML = `
-            <div class="space-y-2">
-                <div class="flex flex-wrap items-center gap-2">
-                    <span class="px-2 py-0.5 bg-emerald-950/20 text-emerald-400 border border-emerald-900/30 rounded-md text-[10px] font-bold uppercase tracking-wider">
-                        ${catName}
-                    </span>
-                    <span class="text-[10px] font-mono text-neutral-500 font-medium">
-                        ${q.id}
-                    </span>
-                </div>
-                <p class="text-sm font-semibold text-neutral-100 leading-snug">${escapeHtml(q.question)}</p>
-
-                <div class="answers-wrapper hidden pt-2 border-t border-neutral-900/40 mt-1.5 space-y-1.5">
-                    <span class="text-[10px] text-neutral-500 uppercase tracking-wider block mb-1 font-bold">Kabul Edilen Cevaplar (Alternatifler için tıklayın):</span>
-                    <div class="flex flex-wrap gap-2">
-                        ${Object.entries(q.acceptable_answers || {}).map(([key, list]) => `
-                            <div class="relative inline-block">
-                                <button type="button" class="answer-badge px-2.5 py-1 bg-neutral-950 hover:bg-neutral-900 border border-neutral-855 hover:border-neutral-700 rounded-lg text-xs text-neutral-200 font-semibold cursor-pointer transition flex items-center gap-1.5 select-none">
-                                    <span>${escapeHtml(key)}</span>
-                                    ${list && list.length > 1 ? `<i data-lucide="git-branch" class="w-3 h-3 text-emerald-500"></i>` : ''}
-                                </button>
-                                <div class="alt-popover hidden absolute left-0 top-full mt-1.5 z-20 w-52 bg-neutral-900 border border-neutral-800 rounded-xl p-2.5 shadow-2xl text-[11px] text-neutral-300 transform origin-top scale-95 opacity-0 transition-all duration-150 pointer-events-auto">
-                                    <div class="absolute -top-1 left-4 w-2 h-2 bg-neutral-900 border-t border-l border-neutral-800 rotate-45"></div>
-                                    <div class="font-bold text-[9px] uppercase tracking-wider text-neutral-500 mb-1 flex items-center gap-1">
-                                        <i data-lucide="git-branch" class="w-3 h-3 text-emerald-400"></i>
-                                        <span>Alternatif Cevaplar</span>
-                                    </div>
-                                    <div class="flex flex-wrap gap-1 mt-1.5">
-                                        ${list && list.length > 1 ?
-                list.slice(1).map(alt => `<span class="px-1.5 py-0.5 bg-black border border-neutral-850 rounded text-neutral-300 font-mono">${escapeHtml(alt)}</span>`).join('')
-                : `<span class="text-neutral-500 italic">Alternatif tanımlanmamış</span>`
-            }
-                                    </div>
-                                </div>
-                            </div>
-                        `).join('')}
-                    </div>
-                </div>
-            </div>
-
-            <div class="flex flex-wrap items-center justify-between gap-x-2 gap-y-2 border-t border-neutral-900/60 pt-3 mt-1">
-                <button type="button" class="toggle-answers-btn shrink-0 px-1 py-1.5 min-[340px]:px-1.5 sm:px-2.5 sm:py-1.5 bg-neutral-950 hover:bg-neutral-900 border border-neutral-850 hover:border-neutral-800 text-neutral-400 hover:text-neutral-200 rounded-lg text-[9px] min-[340px]:text-[10px] sm:text-xs font-semibold transition cursor-pointer flex items-center gap-0.5 min-[340px]:gap-1 sm:gap-1.5 whitespace-nowrap">
-                    <i data-lucide="eye" class="w-3 h-3 sm:w-3.5 sm:h-3.5 eye-icon shrink-0"></i>
-                    <span class="btn-text whitespace-nowrap">Cevapları Gör</span>
-                </button>
-
-                <div class="flex items-center gap-1 sm:gap-2 shrink-0">
-                    <button type="button" class="change-cat-btn px-2 py-1.5 sm:px-2.5 sm:py-1.5 bg-neutral-950 hover:bg-emerald-950/20 border border-neutral-850 hover:border-emerald-900/30 text-neutral-400 hover:text-emerald-400 rounded-lg text-[10px] sm:text-xs font-semibold transition cursor-pointer flex items-center justify-center shrink-0" title="Kategori Değiştir">
-                        <i data-lucide="folder-sync" class="w-3 h-3"></i>
-                    </button>
-                    <button type="button" class="edit-q-btn px-2 py-1.5 sm:px-3 sm:py-1.5 bg-white hover:bg-emerald-50 hover:text-emerald-950 text-black rounded-lg text-[10px] sm:text-xs font-bold transition cursor-pointer flex items-center gap-1 sm:gap-1.5 shrink-0">
-                        <i data-lucide="pencil" class="w-3 h-3"></i>
-                        <span class="hidden sm:inline">Düzenle</span>
-                    </button>
-                    <button type="button" class="delete-q-btn px-2 py-1.5 sm:px-3 sm:py-1.5 bg-neutral-950 hover:bg-red-950/20 hover:text-red-400 hover:border-red-900/40 border border-neutral-850 text-neutral-500 rounded-lg text-[10px] sm:text-xs font-semibold transition cursor-pointer flex items-center gap-1 sm:gap-1.5 shrink-0">
-                        <i data-lucide="trash-2" class="w-3 h-3"></i>
-                        <span class="hidden sm:inline">Sil</span>
-                    </button>
-                </div>
-            </div>
-        `;
-
-        const toggleAnswersBtn = card.querySelector('.toggle-answers-btn');
-        const answersWrapper = card.querySelector('.answers-wrapper');
-        const eyeIcon = toggleAnswersBtn.querySelector('.eye-icon');
-        const btnText = toggleAnswersBtn.querySelector('.btn-text');
-
-        toggleAnswersBtn.onclick = () => {
-            const isHidden = answersWrapper.classList.toggle('hidden');
-            toggleAnswersBtn.innerHTML = isHidden
-                ? '<i data-lucide="eye" class="w-3 h-3 sm:w-3.5 sm:h-3.5 eye-icon shrink-0"></i><span class="btn-text whitespace-nowrap">Cevapları Gör</span>'
-                : '<i data-lucide="eye-off" class="w-3 h-3 sm:w-3.5 sm:h-3.5 eye-icon shrink-0"></i><span class="btn-text whitespace-nowrap">Cevapları Gizle</span>';
-            lucide.createIcons();
-        };
-
-        const popovers = card.querySelectorAll('.alt-popover');
-        const badgeBtns = card.querySelectorAll('.answer-badge');
-
-        badgeBtns.forEach((btn, idx) => {
-            const popover = popovers[idx];
-            btn.onclick = (e) => {
-                e.stopPropagation();
-
-                document.querySelectorAll('.alt-popover').forEach(p => {
-                    if (p !== popover) {
-                        p.classList.add('hidden', 'scale-95', 'opacity-0');
-                        p.classList.remove('scale-100', 'opacity-100');
-                    }
-                });
-
-                const isHidden = popover.classList.contains('hidden');
-                if (isHidden) {
-                    popover.classList.remove('hidden');
-                    setTimeout(() => {
-                        popover.classList.remove('scale-95', 'opacity-0');
-                        popover.classList.add('scale-100', 'opacity-100');
-                    }, 10);
-                } else {
-                    popover.classList.remove('scale-100', 'opacity-100');
-                    popover.classList.add('scale-95', 'opacity-0');
-                    setTimeout(() => {
-                        popover.classList.add('hidden');
-                    }, 150);
-                }
-            };
-        });
-
-        card.querySelector('.edit-q-btn').onclick = () => {
-            startEditQuestion(q);
-        };
-        card.querySelector('.delete-q-btn').onclick = () => {
-            deleteQuestion(q.category, q.id);
-        };
-        card.querySelector('.change-cat-btn').onclick = () => {
-            changeCategoryOfQuestion(q);
-        };
-
-        questionsListContainer.appendChild(card);
-    });
+    questionsListContainer.innerHTML = filtered.map(generateQuestionCardHTML).join('');
+    lucide.createIcons();
 
     if (viewAllModal && !viewAllModal.classList.contains('hidden')) {
         renderViewAllQuestionList();
     }
-
-    lucide.createIcons();
 }
 
 function startEditQuestion(q) {
@@ -1333,6 +1235,7 @@ resetConfigBtn.onclick = async (e) => {
         firebaseApp = null;
 
         questionsData = {};
+                rebuildQuestionsIndex();
         renderQuestionList();
     }
 };
@@ -1789,9 +1692,9 @@ questionForm.onsubmit = async (e) => {
 };
 
 if (searchInput) {
-    searchInput.oninput = () => {
+    searchInput.oninput = debounce(() => {
         renderQuestionList();
-    };
+    }, 120);
 }
 
 if (filterCategory) {
@@ -1819,15 +1722,15 @@ if (viewAllBackdrop) {
 }
 
 if (viewAllSearchQuestionInput) {
-    viewAllSearchQuestionInput.oninput = () => {
+    viewAllSearchQuestionInput.oninput = debounce(() => {
         renderViewAllQuestionList();
-    };
+    }, 120);
 }
 
 if (viewAllSearchAnswerInput) {
-    viewAllSearchAnswerInput.oninput = () => {
+    viewAllSearchAnswerInput.oninput = debounce(() => {
         renderViewAllQuestionList();
-    };
+    }, 120);
 }
 
 if (viewAllFilterCategory) {
