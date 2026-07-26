@@ -18,19 +18,22 @@ Although originally designed specifically for KelimeGo, the ideas and architectu
 
 ## Screenshots
 
-> *A quick overview of the KelimeGo CMS Prototype interface.*
-
-<p align="center">
-  <img src="assets/dashboard.png" alt="Dashboard" width="48%">
-  <img src="assets/questionpool.png" alt="Question Pool" width="48%">
-</p>
-
-<p align="center">
-  <sub><b>Dashboard</b></sub>
-  &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
-  <sub><b>Question Pool</b></sub>
-</p>
-
+<div align="center">
+  <table>
+    <tr>
+      <td align="center">
+        <img src="assets/dashboard.png" width="100%">
+        <br><br>
+        <b>Dashboard</b>
+      </td>
+      <td align="center">
+        <img src="assets/questionpool.png" width="100%">
+        <br><br>
+        <b>Question Pool</b>
+      </td>
+    </tr>
+  </table>
+</div>
 ---
 
 ## Features
