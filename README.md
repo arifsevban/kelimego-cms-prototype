@@ -34,7 +34,6 @@ Although originally designed specifically for KelimeGo, the ideas and architectu
     </tr>
   </table>
 </div>
----
 
 ## Features
 
@@ -67,7 +66,7 @@ This repository represents the original prototype that inspired the development 
 
 This project is no longer under active development.
 
-It remains available as an open-source reference that documents the early development process behind OpsBare.
+It remains available as an open-source reference that documents the early development process behind [OpsBare](https://github.com/RieStudio/OpsBare).
 
 ---
 
