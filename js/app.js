@@ -686,6 +686,290 @@ async function exportBackupData() {
     }
 }
 
+// Custom Export Functions
+let customExportQuestionsCache = [];
+let selectedCustomQuestionIds = new Set();
+let activeCustomExportTab = 'range'; // 'range' | 'manual'
+
+const openCustomExportBtn = document.getElementById('open-custom-export-btn');
+const customExportModal = document.getElementById('custom-export-modal');
+const customExportBackdrop = document.getElementById('custom-export-backdrop');
+const closeCustomExportModalBtn = document.getElementById('close-custom-export-modal-btn');
+const closeCustomExportModalCancelBtn = document.getElementById('close-custom-export-modal-cancel-btn');
+const startCustomExportBtn = document.getElementById('start-custom-export-btn');
+
+const tabBtnRange = document.getElementById('tab-btn-range');
+const tabBtnManual = document.getElementById('tab-btn-manual');
+const tabContentRange = document.getElementById('tab-content-range');
+const tabContentManual = document.getElementById('tab-content-manual');
+
+const customExportLastNVal = document.getElementById('custom-export-last-n-val');
+const customExportFirstNVal = document.getElementById('custom-export-first-n-val');
+const customExportRangeStart = document.getElementById('custom-export-range-start');
+const customExportRangeEnd = document.getElementById('custom-export-range-end');
+const customExportTotalCount = document.getElementById('custom-export-total-count');
+const customExportPreviewCount = document.getElementById('custom-export-preview-count');
+const customExportSelectedCount = document.getElementById('custom-export-selected-count');
+
+const customExportSearchInput = document.getElementById('custom-export-search-input');
+const customExportQuestionsList = document.getElementById('custom-export-questions-list');
+const customExportSelectAllBtn = document.getElementById('custom-export-select-all-btn');
+
+async function openCustomExportModal() {
+    if (!db) {
+        showToast('Firebase bağlantısı yok. Önce veritabanını yapılandırın.', 'error');
+        return;
+    }
+
+    try {
+        rebuildQuestionsIndex();
+        customExportQuestionsCache = [...questionsIndex];
+
+        const total = customExportQuestionsCache.length;
+        customExportTotalCount.textContent = total;
+
+        if (total > 0) {
+            customExportLastNVal.value = Math.min(10, total);
+            customExportFirstNVal.value = Math.min(10, total);
+        }
+
+        selectedCustomQuestionIds.clear();
+        renderCustomExportQuestionsList();
+        updateCustomExportPreviewCount();
+
+        customExportModal.classList.remove('hidden');
+        lucide.createIcons();
+    } catch (err) {
+        console.error('Custom export modal error:', err);
+        showToast('Sorular yüklenirken bir hata oluştu: ' + err.message, 'error');
+    }
+}
+
+function closeCustomExportModal() {
+    customExportModal.classList.add('hidden');
+}
+
+function switchCustomExportTab(tab) {
+    activeCustomExportTab = tab;
+    if (tab === 'range') {
+        tabBtnRange.className = 'pb-3 text-sm font-semibold border-b-2 border-emerald-500 text-emerald-400 transition flex items-center gap-2';
+        tabBtnManual.className = 'pb-3 text-sm font-semibold border-b-2 border-transparent text-neutral-400 hover:text-neutral-200 transition flex items-center gap-2';
+        tabContentRange.classList.remove('hidden');
+        tabContentManual.classList.add('hidden');
+    } else {
+        tabBtnManual.className = 'pb-3 text-sm font-semibold border-b-2 border-emerald-500 text-emerald-400 transition flex items-center gap-2';
+        tabBtnRange.className = 'pb-3 text-sm font-semibold border-b-2 border-transparent text-neutral-400 hover:text-neutral-200 transition flex items-center gap-2';
+        tabContentManual.classList.remove('hidden');
+        tabContentRange.classList.add('hidden');
+    }
+    updateCustomExportPreviewCount();
+}
+
+function renderCustomExportQuestionsList() {
+    const filterText = toTurkishLowerCase(customExportSearchInput ? customExportSearchInput.value : '');
+    
+    if (!filterText) {
+        customExportQuestionsList.innerHTML = '<div class="text-center py-8 text-xs text-neutral-500">Lütfen aramak istediğiniz kelime veya cevabı yukarıdaki alana yazın.</div>';
+        return;
+    }
+
+    const filtered = customExportQuestionsCache.filter(q => {
+        const questionText = q.normQuestion || '';
+        const categoryText = toTurkishLowerCase(q.categoryLabel || q.category || '');
+        const answersText = q.normAnswers || '';
+        const idText = q.normId || '';
+
+        return questionText.includes(filterText) || categoryText.includes(filterText) || answersText.includes(filterText) || idText.includes(filterText);
+    });
+
+    if (filtered.length === 0) {
+        customExportQuestionsList.innerHTML = '<div class="text-center py-8 text-xs text-neutral-500">Aramanıza uygun soru ve cevap bulunamadı.</div>';
+        return;
+    }
+
+    customExportQuestionsList.innerHTML = filtered.map((q, idx) => {
+        const isChecked = selectedCustomQuestionIds.has(q.id);
+        const questionTitle = q.question || '';
+        
+        let answerSummary = [];
+        if (q.acceptable_answers && typeof q.acceptable_answers === 'object') {
+            answerSummary = Object.keys(q.acceptable_answers);
+        }
+        const answersStr = answerSummary.join(', ');
+
+        return `
+            <label class="flex items-start gap-3 p-2.5 bg-neutral-900/80 hover:bg-neutral-800 border border-neutral-800/80 rounded-xl cursor-pointer transition">
+                <input type="checkbox" data-qid="${q.id}" class="custom-export-q-check mt-1 text-emerald-500 focus:ring-emerald-500 bg-neutral-950 border-neutral-700 rounded" ${isChecked ? 'checked' : ''}>
+                <div class="flex-1 min-w-0">
+                    <div class="flex items-center gap-2">
+                        <span class="text-[10px] font-bold px-1.5 py-0.5 rounded bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">#${idx + 1}</span>
+                        ${questionTitle ? `<h4 class="text-xs font-bold text-white truncate">${escapeHtml(questionTitle)}</h4>` : ''}
+                        <span class="text-[10px] px-2 py-0.5 rounded-full bg-neutral-800 text-neutral-400">${escapeHtml(q.categoryLabel || q.category || 'Kategorisiz')}</span>
+                    </div>
+                    ${answersStr ? `<p class="text-[10px] text-emerald-400/80 truncate mt-0.5">Cevaplar: ${escapeHtml(answersStr)}</p>` : ''}
+                </div>
+            </label>
+        `;
+    }).join('');
+
+    document.querySelectorAll('.custom-export-q-check').forEach(chk => {
+        chk.addEventListener('change', (e) => {
+            const qid = e.target.getAttribute('data-qid');
+            if (e.target.checked) {
+                selectedCustomQuestionIds.add(qid);
+            } else {
+                selectedCustomQuestionIds.delete(qid);
+            }
+            if (customExportSelectedCount) {
+                customExportSelectedCount.textContent = selectedCustomQuestionIds.size;
+            }
+            updateCustomExportPreviewCount();
+        });
+    });
+}
+
+function updateCustomExportPreviewCount() {
+    let count = 0;
+    const total = customExportQuestionsCache.length;
+
+    if (activeCustomExportTab === 'range') {
+        const mode = document.querySelector('input[name="custom-export-mode"]:checked')?.value || 'last_n';
+        if (mode === 'last_n') {
+            const val = parseInt(customExportLastNVal.value, 10) || 0;
+            count = Math.min(Math.max(0, val), total);
+        } else if (mode === 'first_n') {
+            const val = parseInt(customExportFirstNVal.value, 10) || 0;
+            count = Math.min(Math.max(0, val), total);
+        } else if (mode === 'range') {
+            const start = parseInt(customExportRangeStart.value, 10) || 1;
+            const end = parseInt(customExportRangeEnd.value, 10) || total;
+            if (start <= end && total > 0) {
+                const s = Math.max(1, start);
+                const e = Math.min(total, end);
+                count = Math.max(0, e - s + 1);
+            } else {
+                count = 0;
+            }
+        }
+    } else {
+        count = selectedCustomQuestionIds.size;
+    }
+
+    customExportPreviewCount.textContent = count;
+}
+
+async function startCustomExport() {
+    if (!db) {
+        showToast('Firebase bağlantısı yok.', 'error');
+        return;
+    }
+
+    const total = customExportQuestionsCache.length;
+    if (total === 0) {
+        showToast('İndirilecek soru bulunmuyor.', 'warning');
+        return;
+    }
+
+    let questionsToExport = [];
+
+    if (activeCustomExportTab === 'range') {
+        const mode = document.querySelector('input[name="custom-export-mode"]:checked')?.value || 'last_n';
+        if (mode === 'last_n') {
+            const n = Math.min(Math.max(1, parseInt(customExportLastNVal.value, 10) || 1), total);
+            questionsToExport = customExportQuestionsCache.slice(-n);
+        } else if (mode === 'first_n') {
+            const n = Math.min(Math.max(1, parseInt(customExportFirstNVal.value, 10) || 1), total);
+            questionsToExport = customExportQuestionsCache.slice(0, n);
+        } else if (mode === 'range') {
+            let start = Math.max(1, parseInt(customExportRangeStart.value, 10) || 1);
+            let end = Math.min(total, parseInt(customExportRangeEnd.value, 10) || total);
+            if (start > end) {
+                showToast('Başlangıç sırası bitiş sırasından büyük olamaz.', 'error');
+                return;
+            }
+            questionsToExport = customExportQuestionsCache.slice(start - 1, end);
+        }
+    } else {
+        if (selectedCustomQuestionIds.size === 0) {
+            showToast('Lütfen indirilecek en az bir soru seçin.', 'warning');
+            return;
+        }
+        questionsToExport = customExportQuestionsCache.filter(q => selectedCustomQuestionIds.has(q.id));
+    }
+
+    if (questionsToExport.length === 0) {
+        showToast('Seçilen kriterlere uygun soru bulunamadı.', 'warning');
+        return;
+    }
+
+    try {
+        const categoriesSnapshot = await get(ref(db, 'cms_categories'));
+        const categoriesData = categoriesSnapshot.exists() ? categoriesSnapshot.val() : [];
+
+        const questionsPoolObj = {};
+        questionsToExport.forEach(q => {
+            if (!questionsPoolObj[q.category]) {
+                questionsPoolObj[q.category] = {};
+            }
+            questionsPoolObj[q.category][q.id] = {
+                question: q.question,
+                acceptable_answers: q.acceptable_answers
+            };
+        });
+
+        const backup = {
+            app: 'KelimeGo CMS',
+            export_type: 'custom_selection',
+            version: '1.0',
+            exported_at: new Date().toISOString(),
+            count: questionsToExport.length,
+            questions_pool: questionsPoolObj,
+            cms_categories: categoriesData
+        };
+
+        const json = JSON.stringify(backup, null, 2);
+        const now = new Date();
+        const pad = n => String(n).padStart(2, '0');
+        const datestamp = `${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(now.getDate())}_${pad(now.getHours())}-${pad(now.getMinutes())}`;
+        const filename = `kelimego_ozel_sorular_${questionsToExport.length}_adet_${datestamp}.json`;
+
+        if ('showSaveFilePicker' in window) {
+            try {
+                const handle = await window.showSaveFilePicker({
+                    suggestedName: filename,
+                    types: [{
+                        description: 'JSON Dosyası',
+                        accept: { 'application/json': ['.json'] }
+                    }]
+                });
+                const writable = await handle.createWritable();
+                await writable.write(json);
+                await writable.close();
+                showToast(`"${filename}" (${questionsToExport.length} soru) kaydedildi.`, 'success');
+                closeCustomExportModal();
+            } catch (err) {
+                if (err.name === 'AbortError') return;
+                throw err;
+            }
+        } else {
+            const blob = new Blob([json], { type: 'application/json' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = filename;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            setTimeout(() => URL.revokeObjectURL(url), 1000);
+            showToast(`"${filename}" (${questionsToExport.length} soru) indirmesi başlatıldı.`, 'info');
+            closeCustomExportModal();
+        }
+    } catch (err) {
+        console.error('Custom export download error:', err);
+        showToast('Özel indirme sırasında bir hata oluştu: ' + err.message, 'error');
+    }
+}
+
 async function importBackupData(file) {
     if (!db) {
         showToast('Firebase bağlantısı yok. Önce veritabanını yapılandırın.', 'error');
@@ -1743,6 +2027,74 @@ if (exportBackupBtn) {
     exportBackupBtn.onclick = () => exportBackupData();
 }
 
+if (openCustomExportBtn) {
+    openCustomExportBtn.onclick = () => openCustomExportModal();
+}
+
+if (closeCustomExportModalBtn) {
+    closeCustomExportModalBtn.onclick = () => closeCustomExportModal();
+}
+
+if (closeCustomExportModalCancelBtn) {
+    closeCustomExportModalCancelBtn.onclick = () => closeCustomExportModal();
+}
+
+if (customExportBackdrop) {
+    customExportBackdrop.onclick = () => closeCustomExportModal();
+}
+
+if (tabBtnRange) {
+    tabBtnRange.onclick = () => switchCustomExportTab('range');
+}
+
+if (tabBtnManual) {
+    tabBtnManual.onclick = () => switchCustomExportTab('manual');
+}
+
+if (startCustomExportBtn) {
+    startCustomExportBtn.onclick = () => startCustomExport();
+}
+
+document.querySelectorAll('input[name="custom-export-mode"]').forEach(radio => {
+    radio.addEventListener('change', () => updateCustomExportPreviewCount());
+});
+
+[customExportLastNVal, customExportFirstNVal].forEach(inputEl => {
+    if (inputEl) {
+        inputEl.addEventListener('input', () => updateCustomExportPreviewCount());
+    }
+});
+
+if (customExportSearchInput) {
+    customExportSearchInput.addEventListener('input', debounce(() => {
+        renderCustomExportQuestionsList();
+    }, 120));
+}
+
+if (customExportSelectAllBtn) {
+    customExportSelectAllBtn.onclick = () => {
+        const filterText = toTurkishLowerCase(customExportSearchInput ? customExportSearchInput.value : '');
+        if (!filterText) return;
+
+        const filtered = customExportQuestionsCache.filter(q => {
+            const questionText = q.normQuestion || '';
+            const categoryText = toTurkishLowerCase(q.categoryLabel || q.category || '');
+            const answersText = q.normAnswers || '';
+            const idText = q.normId || '';
+
+            return questionText.includes(filterText) || categoryText.includes(filterText) || answersText.includes(filterText) || idText.includes(filterText);
+        });
+
+        filtered.forEach(q => selectedCustomQuestionIds.add(q.id));
+
+        if (customExportSelectedCount) {
+            customExportSelectedCount.textContent = selectedCustomQuestionIds.size;
+        }
+        renderCustomExportQuestionsList();
+        updateCustomExportPreviewCount();
+    };
+}
+
 if (importBackupInput) {
     importBackupInput.onchange = (e) => {
         const file = e.target.files && e.target.files[0];
@@ -1773,8 +2125,12 @@ window.addEventListener('DOMContentLoaded', async () => {
     });
 
     window.addEventListener('keydown', (e) => {
-        if (e.key === 'Escape' && !viewAllModal.classList.contains('hidden')) {
-            closeViewAllModal();
+        if (e.key === 'Escape') {
+            if (!customExportModal.classList.contains('hidden')) {
+                closeCustomExportModal();
+            } else if (!viewAllModal.classList.contains('hidden')) {
+                closeViewAllModal();
+            }
         }
     });
 

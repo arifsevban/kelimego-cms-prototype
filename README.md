@@ -19,17 +19,17 @@ Although originally designed specifically for KelimeGo, the ideas and architectu
 ## Screenshots
 
 <div align="center">
-  <table>
-    <tr>
-      <td align="center">
-        <img src="assets/dashboard.png" width="100%">
-        <br><br>
+  <table border="0" style="border: none; border-collapse: collapse; width: 100%;">
+    <tr style="border: none;">
+      <td align="center" style="border: none; padding: 2px; width: 50%;">
+        <img src="assets/dashboard.png" style="width: 100%; max-width: 100%; display: block;">
+        <br>
         <b>Dashboard</b>
       </td>
-      <td align="center">
-        <img src="assets/questionpool.png" width="100%">
-        <br><br>
-        <b>Question Pool</b>
+      <td align="center" style="border: none; padding: 2px; width: 50%;">
+        <img src="assets/questionpool.png" style="width: 100%; max-width: 100%; display: block;">
+        <br>
+        <b>Question Pool Window</b>
       </td>
     </tr>
   </table>
