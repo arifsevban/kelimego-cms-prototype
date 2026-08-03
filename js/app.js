@@ -491,6 +491,7 @@ toggleManageCatsBtn.onclick = () => {
 };
 
 function renderCategoryManageList() {
+    if (!categoryManageList) return;
     const cats = loadCategories();
     categoryManageList.innerHTML = '';
     cats.forEach((c, idx) => {
@@ -1003,43 +1004,113 @@ async function importBackupData(file) {
 
         if (parsed && typeof parsed === 'object' && !Array.isArray(parsed)) {
             if (parsed.questions_pool && typeof parsed.questions_pool === 'object') {
-
                 questionsPool = parsed.questions_pool;
                 categoriesData = Array.isArray(parsed.cms_categories) ? parsed.cms_categories : null;
             } else {
-
-                const keys = Object.keys(parsed);
-                const isPool = keys.length > 0 && keys.every(k => {
-                    const cat = parsed[k];
-                    return typeof cat === 'object' && !Array.isArray(cat) &&
-                        Object.values(cat).every(q =>
-                            typeof q === 'object' && ('question' in q || 'acceptable_answers' in q || 'answers' in q)
-                        );
-                });
-                if (isPool) {
-                    questionsPool = parsed;
-                }
+                questionsPool = parsed;
             }
         }
 
-        if (!questionsPool) {
+        if (!questionsPool || typeof questionsPool !== 'object') {
             showToast('Bu dosya KelimeGo soru şemasına uygun değil. Lütfen geçerli bir yedek dosyası seçin.', 'error');
             return;
         }
 
-        const questionCount = Object.values(questionsPool).reduce((sum, cat) => sum + Object.keys(cat).length, 0);
+        // Normalize questionsPool structure: recursively find all valid question objects
+        const normalizedImportPool = {};
+
+        function extractQuestions(obj, categoryHint = 'genel_kultur') {
+            if (!obj || typeof obj !== 'object') return;
+
+            for (const key in obj) {
+                const val = obj[key];
+                if (!val || typeof val !== 'object') continue;
+
+                // Check if val is a question object
+                if ('question' in val || 'acceptable_answers' in val || 'answers' in val) {
+                    const catId = val.category || categoryHint;
+                    if (!normalizedImportPool[catId]) normalizedImportPool[catId] = {};
+
+                    // Ensure question ID is preserved (key or val.id)
+                    const qId = val.id || key;
+                    const { category, id, ...cleanQ } = val;
+                    normalizedImportPool[catId][qId] = cleanQ;
+                } else {
+                    // Otherwise it's a category container object
+                    extractQuestions(val, key);
+                }
+            }
+        }
+
+        extractQuestions(questionsPool);
+
+        const questionCount = Object.values(normalizedImportPool).reduce((sum, catObj) => sum + Object.keys(catObj).length, 0);
+
+        if (questionCount === 0) {
+            showToast('İçe aktarılacak geçerli soru bulunamadı.', 'warning');
+            return;
+        }
 
         const confirmed = await appConfirm(
-            `Bu işlem veritabanındaki tüm soruları bu yedek dosyasındaki ${questionCount} soru ile değiştirecektir. Devam etmek istediğinize emin misiniz?`
+            `Bu işlem yedek dosyasındaki ${questionCount} soruyu veritabanında var olan soruların üzerine ekleyecektir/birleştirecektir. Devam etmek istediğinize emin misiniz?`
         );
         if (!confirmed) return;
 
         try {
-            await set(ref(db, 'questions_pool'), questionsPool);
-            if (categoriesData && categoriesData.length > 0) {
-                await set(ref(db, 'cms_categories'), categoriesData);
+            // Fetch existing data to perform merge
+            const currentQuestionsSnapshot = await get(ref(db, 'questions_pool'));
+            const currentQuestionsData = currentQuestionsSnapshot.exists() ? currentQuestionsSnapshot.val() : {};
+
+            // Merge normalizedImportPool into currentQuestionsData (generate unique ID if collision occurs)
+            const mergedQuestionsPool = { ...currentQuestionsData };
+
+            for (const categoryId in normalizedImportPool) {
+                if (!mergedQuestionsPool[categoryId]) {
+                    mergedQuestionsPool[categoryId] = {};
+                }
+                
+                const existingCategoryQuestions = mergedQuestionsPool[categoryId];
+
+                for (const qId in normalizedImportPool[categoryId]) {
+                    const importedQ = normalizedImportPool[categoryId][qId];
+                    let targetQId = qId;
+
+                    // If ID already exists in this category, generate a new unique ID
+                    if (targetQId in existingCategoryQuestions) {
+                        targetQId = `q_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`;
+                    }
+
+                    existingCategoryQuestions[targetQId] = importedQ;
+                }
             }
-            showToast(`${questionCount} soru başarıyla içe aktarıldı.`, 'success');
+
+            await set(ref(db, 'questions_pool'), mergedQuestionsPool);
+
+            // Update local state immediately
+            questionsData = mergedQuestionsPool;
+            rebuildQuestionsIndex();
+            renderQuestionList();
+
+            if (categoriesData && categoriesData.length > 0) {
+                const currentCats = loadCategories();
+                const existingValues = new Set(currentCats.map(c => c.value));
+                const mergedCategories = [...currentCats];
+
+                categoriesData.forEach(c => {
+                    if (c && c.value && !existingValues.has(c.value)) {
+                        existingValues.add(c.value);
+                        mergedCategories.push(c);
+                    }
+                });
+
+                saveCategories(mergedCategories);
+                populateCategoryDropdowns();
+                if (categoryManageList && !categoryManageList.classList.contains('hidden')) {
+                    renderCategoryManageList();
+                }
+            }
+
+            showToast(`${questionCount} soru var olan soruların üzerine başarıyla eklendi.`, 'success');
         } catch (err) {
             console.error('Import error:', err);
             showToast('İçe aktarma sırasında bir hata oluştu: ' + err.message, 'error');
