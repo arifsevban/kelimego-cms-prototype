@@ -456,44 +456,78 @@ function populateCategoryDropdowns() {
 
 populateCategoryDropdowns();
 
-addCategoryBtn.onclick = () => {
-    const rawName = newCategoryInput.value.trim();
-    if (!rawName) return;
-    const slug = slugify(rawName);
-    if (!slug) { showToast('Geçerli bir kategori adı girin.', 'error'); return; }
+if (addCategoryBtn && newCategoryInput) {
+    addCategoryBtn.onclick = () => {
+        const rawName = newCategoryInput.value.trim();
+        if (!rawName) return;
+        const slug = slugify(rawName);
+        if (!slug) { showToast('Geçerli bir kategori adı girin.', 'error'); return; }
 
-    const cats = loadCategories();
-    if (cats.some(c => c.value === slug)) {
-        showToast('Bu kategori zaten mevcut.', 'error');
-        return;
-    }
-    cats.push({ value: slug, label: rawName });
-    saveCategories(cats);
-    populateCategoryDropdowns();
-    if (!categoryManageList.classList.contains('hidden')) renderCategoryManageList();
-    categorySelect.value = slug;
-    newCategoryInput.value = '';
-    showToast(`"${rawName}" kategorisi eklendi.`, 'success');
-};
+        const cats = loadCategories();
+        if (cats.some(c => c.value === slug)) {
+            showToast('Bu kategori zaten mevcut.', 'error');
+            return;
+        }
+        cats.push({ value: slug, label: rawName });
+        saveCategories(cats);
+        populateCategoryDropdowns();
+        if (categoryManageList && !categoryManageList.classList.contains('hidden')) renderCategoryManageList();
+        categorySelect.value = slug;
+        newCategoryInput.value = '';
+        showToast(`"${rawName}" kategorisi eklendi.`, 'success');
+    };
 
-newCategoryInput.addEventListener('keydown', (e) => {
-    if (e.key === 'Enter') { e.preventDefault(); addCategoryBtn.click(); }
-});
+    newCategoryInput.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter') { e.preventDefault(); addCategoryBtn.click(); }
+    });
+}
 
 const categoryManageList = document.getElementById('category-manage-list');
 const toggleManageCatsBtn = document.getElementById('toggle-manage-cats-btn');
 const toggleManageCatsText = document.getElementById('toggle-manage-cats-text');
 
-toggleManageCatsBtn.onclick = () => {
-    const isHidden = categoryManageList.classList.toggle('hidden');
-    toggleManageCatsText.textContent = isHidden ? 'Kategorileri Yönet' : 'Yönetimi Kapat';
-    if (!isHidden) renderCategoryManageList();
-};
+if (toggleManageCatsBtn && categoryManageList) {
+    toggleManageCatsBtn.onclick = () => {
+        const isHidden = categoryManageList.classList.toggle('hidden');
+        if (toggleManageCatsText) {
+            toggleManageCatsText.textContent = isHidden ? 'Kategorileri Yönet' : 'Yönetimi Kapat';
+        }
+        if (!isHidden) renderCategoryManageList();
+    };
+}
 
 function renderCategoryManageList() {
     if (!categoryManageList) return;
     const cats = loadCategories();
     categoryManageList.innerHTML = '';
+
+    const addBtn = document.createElement('button');
+    addBtn.type = 'button';
+    addBtn.className = 'w-full py-1.5 px-3 mb-2 bg-emerald-500 hover:bg-emerald-400 text-black rounded-lg text-xs font-bold transition cursor-pointer flex items-center justify-center gap-1.5 shadow-sm shadow-emerald-500/20';
+    addBtn.innerHTML = '<i data-lucide="plus" class="w-3.5 h-3.5"></i> <span>Yeni Kategori Ekle</span>';
+    addBtn.onclick = async () => {
+        const rawName = await appPrompt('Yeni kategori adını girin (Örn: Bilim):');
+        if (!rawName || !rawName.trim()) return;
+        const trimmed = rawName.trim();
+        const slug = slugify(trimmed);
+        if (!slug) {
+            showToast('Geçerli bir kategori adı girin.', 'error');
+            return;
+        }
+        const currentCats = loadCategories();
+        if (currentCats.some(c => c.value === slug)) {
+            showToast('Bu kategori zaten mevcut.', 'error');
+            return;
+        }
+        currentCats.push({ value: slug, label: trimmed });
+        saveCategories(currentCats);
+        populateCategoryDropdowns();
+        renderCategoryManageList();
+        categorySelect.value = slug;
+        showToast(`"${trimmed}" kategorisi eklendi.`, 'success');
+    };
+    categoryManageList.appendChild(addBtn);
+
     cats.forEach((c, idx) => {
         const row = document.createElement('div');
         row.className = 'flex items-center gap-2 bg-black border border-neutral-800 rounded-lg px-3 py-1.5';
