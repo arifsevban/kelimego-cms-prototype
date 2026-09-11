@@ -753,15 +753,26 @@ function closeCustomExportModal() {
 function switchCustomExportTab(tab) {
     activeCustomExportTab = tab;
     if (tab === 'range') {
-        tabBtnRange.className = 'pb-3 text-sm font-semibold border-b-2 border-emerald-500 text-emerald-400 transition flex items-center gap-2';
-        tabBtnManual.className = 'pb-3 text-sm font-semibold border-b-2 border-transparent text-neutral-400 hover:text-neutral-200 transition flex items-center gap-2';
+        tabBtnRange.classList.remove('border-transparent', 'text-neutral-400', 'hover:text-neutral-200');
+        tabBtnRange.classList.add('border-emerald-500', 'text-emerald-400');
+
+        tabBtnManual.classList.remove('border-emerald-500', 'text-emerald-400');
+        tabBtnManual.classList.add('border-transparent', 'text-neutral-400', 'hover:text-neutral-200');
+
         tabContentRange.classList.remove('hidden');
         tabContentManual.classList.add('hidden');
     } else {
-        tabBtnManual.className = 'pb-3 text-sm font-semibold border-b-2 border-emerald-500 text-emerald-400 transition flex items-center gap-2';
-        tabBtnRange.className = 'pb-3 text-sm font-semibold border-b-2 border-transparent text-neutral-400 hover:text-neutral-200 transition flex items-center gap-2';
+        tabBtnManual.classList.remove('border-transparent', 'text-neutral-400', 'hover:text-neutral-200');
+        tabBtnManual.classList.add('border-emerald-500', 'text-emerald-400');
+
+        tabBtnRange.classList.remove('border-emerald-500', 'text-emerald-400');
+        tabBtnRange.classList.add('border-transparent', 'text-neutral-400', 'hover:text-neutral-200');
+
         tabContentManual.classList.remove('hidden');
         tabContentRange.classList.add('hidden');
+        if (customExportSearchInput) {
+            customExportSearchInput.focus();
+        }
     }
     updateCustomExportPreviewCount();
 }
@@ -842,8 +853,8 @@ function updateCustomExportPreviewCount() {
             const val = parseInt(customExportFirstNVal.value, 10) || 0;
             count = Math.min(Math.max(0, val), total);
         } else if (mode === 'range') {
-            const start = parseInt(customExportRangeStart.value, 10) || 1;
-            const end = parseInt(customExportRangeEnd.value, 10) || total;
+            const start = parseInt(customExportRangeStart?.value, 10) || 1;
+            const end = parseInt(customExportRangeEnd?.value, 10) || total;
             if (start <= end && total > 0) {
                 const s = Math.max(1, start);
                 const e = Math.min(total, end);

@@ -24,3 +24,11 @@
     60% { transform: translateX(-3px); }
     80% { transform: translateX(2px); }
 }
+
+button,
+[role="button"],
+#tab-btn-range,
+#tab-btn-manual {
+    cursor: pointer;
+}
+
