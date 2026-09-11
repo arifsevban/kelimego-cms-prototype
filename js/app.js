@@ -1750,8 +1750,8 @@ function addAnswerInput(value = '', altValue = '', scrollToView = false) {
 
     if (altValue) {
         altRow.classList.remove('hidden');
-        altBtn.classList.remove('text-neutral-400', 'border-neutral-800');
-        altBtn.classList.add('text-emerald-400', 'border-emerald-900/30', 'bg-emerald-950/20');
+        altBtn.classList.remove('text-neutral-400', 'border-neutral-800', 'bg-black', 'hover:bg-neutral-800');
+        altBtn.classList.add('text-black', 'bg-emerald-500', 'hover:bg-emerald-400', 'border-emerald-500');
     }
 
     altBtn.onclick = () => {
@@ -1769,8 +1769,8 @@ function addAnswerInput(value = '', altValue = '', scrollToView = false) {
         } else if (e.key === 'Control' || (e.key === 'Enter' && e.ctrlKey)) {
             e.preventDefault();
             altRow.classList.remove('hidden');
-            altBtn.classList.remove('text-neutral-400', 'border-neutral-800');
-            altBtn.classList.add('text-emerald-400', 'border-emerald-900/30', 'bg-emerald-950/20');
+            altBtn.classList.remove('text-neutral-400', 'border-neutral-800', 'bg-black', 'hover:bg-neutral-800');
+            altBtn.classList.add('text-black', 'bg-emerald-500', 'hover:bg-emerald-400', 'border-emerald-500');
             altInput.focus();
         }
     });
@@ -1786,11 +1786,11 @@ function addAnswerInput(value = '', altValue = '', scrollToView = false) {
     altInput.addEventListener('input', () => {
         const hasContent = altInput.value.trim() !== '';
         if (hasContent) {
-            altBtn.classList.remove('text-neutral-400', 'border-neutral-800');
-            altBtn.classList.add('text-emerald-400', 'border-emerald-900/30', 'bg-emerald-950/20');
+            altBtn.classList.remove('text-neutral-400', 'border-neutral-800', 'bg-black', 'hover:bg-neutral-800');
+            altBtn.classList.add('text-black', 'bg-emerald-500', 'hover:bg-emerald-400', 'border-emerald-500');
         } else {
-            altBtn.classList.add('text-neutral-400', 'border-neutral-800');
-            altBtn.classList.remove('text-emerald-400', 'border-emerald-900/30', 'bg-emerald-950/20');
+            altBtn.classList.add('text-neutral-400', 'border-neutral-800', 'bg-black', 'hover:bg-neutral-800');
+            altBtn.classList.remove('text-black', 'bg-emerald-500', 'hover:bg-emerald-400', 'border-emerald-500');
         }
         checkDuplicateAnswers();
     });
